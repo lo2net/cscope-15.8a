@@ -426,5 +426,7 @@ int	hash(char *ss);
 int	execute(char *a, ...);
 long	dbseek(long offset);
 
+#define __DJGPP__
+#define __MSDOS__
 
 #endif /* CSCOPE_GLOBAL_H */

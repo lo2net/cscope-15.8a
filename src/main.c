@@ -214,7 +214,7 @@ char ** parse_options(int *argc, char **argv)
 			verbosemode = YES;
 			break;
 		case 'V':
-			fprintf(stderr, "%s: version %d%s\n", argv0,
+			fprintf(stderr, "%s: version %d%s.\tCompiled by lo2net\n", argv0,
 				FILEVERSION, FIXVERSION);
 			myexit(0);
 			break;
@@ -484,7 +484,11 @@ cscope: reffile too long, cannot be > %d characters\n", sizeof(path) - 3);
     shell = mygetenv("SHELL", SHELL);
     lineflag = mygetenv("CSCOPE_LINEFLAG", LINEFLAG);
     lineflagafterfile = getenv("CSCOPE_LINEFLAG_AFTER_FILE") ? 1 : 0;
+#ifdef __MSDOS__
+    tmpdir = mygetenv("TMP", TMPDIR);
+#else
     tmpdir = mygetenv("TMPDIR", TMPDIR);
+#endif
 
     /* XXX remove if/when clearerr() in dir.c does the right thing. */
     if (namefile && strcmp(namefile, "-") == 0 && !buildonly) {
@@ -504,10 +508,12 @@ cscope: TMPDIR to a valid directory\n");
     }
 
     /* create the temporary file names */
-    orig_umask = umask(S_IRWXG|S_IRWXO);
+    //orig_umask = umask(S_IRWXG|S_IRWXO);
+    orig_umask = umask(S_IRWXU);
     pid = getpid();
     snprintf(tempdirpv, sizeof(tempdirpv), "%s/cscope.%d", tmpdir, pid);
-    if(mkdir(tempdirpv,S_IRWXU)) {
+    //if(mkdir(tempdirpv,S_IRWXU)) {
+    if(mkdir(tempdirpv)) {
 	fprintf(stderr, "\
 cscope: Could not create private temp dir %s\n",
 		tempdirpv);
@@ -522,10 +528,10 @@ cscope: Could not create private temp dir %s\n",
     if (signal(SIGINT, SIG_IGN) != SIG_IGN) {
 	/* cleanup on the interrupt and quit signals */
 	signal(SIGINT, myexit);
-	signal(SIGQUIT, myexit);
+	//signal(SIGQUIT, myexit);
     }
     /* cleanup on the hangup signal */
-    signal(SIGHUP, myexit);
+    //signal(SIGHUP, myexit);
 
     /* ditto the TERM signal */
     signal(SIGTERM, myexit);
@@ -534,7 +540,7 @@ cscope: Could not create private temp dir %s\n",
      * linemode, while in curses mode the "|" command can cause a pipe signal
      * too
      */
-    signal(SIGPIPE, SIG_IGN);
+    //signal(SIGPIPE, SIG_IGN);
 
     /* if the database path is relative and it can't be created */
     if (reffile[0] != '/' && access(".", WRITE) != 0) {
@@ -1056,7 +1062,10 @@ myexit(int sig)
 		exitcurses();
 	}
 	/* dump core for debugging on the quit signal */
-	if (sig == SIGQUIT) {
+	//if (sig == SIGQUIT) {
+	if (sig == SIGTERM
+		||sig == SIGABRT
+		||sig == SIGBREAK) {
 		abort();
 	}
 	/* HBB 20000421: be nice: free allocated data */
